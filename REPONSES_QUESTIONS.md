@@ -20,3 +20,30 @@ Les instructions se lisent mot par mot de gauche à droite. Voici ce que fait le
 ### 3.2 A case is still missing, spot it out and give the corresponding rule
 Le cas manquant est celui où le programme termine ses instructions et que sa pile est vide. Il n'a alors aucune valeur à rendre. Il va donc produire une erreur. La sémantique correspondante est la suivante:
 $$ \frac{Q, v_1 :: \dots :: v_n :: \emptyset \rightarrow \emptyset, \emptyset}{v_1, \dots, v_n \Vdash n, Q \Rightarrow ERR} $$
+### 3.3 Give the rules describing the small step semantics for instruction sequences. Beware to cover all cases of runtime errors
+1) push
+$$ \frac{n \notin \mathbb{Z}}{push \, n.Q, S \rightarrow ERR} $$
+$$ \frac{}{push \, n.Q, S \rightarrow Q, n :: S} $$
+2) pop
+$$ \frac{}{pop.Q, \emptyset \rightarrow ERR} $$
+$$ \frac{}{pop.Q, v :: S \rightarrow Q, S} $$
+3) swap
+$$ \frac{\# S < 2}{swap.Q, S \rightarrow ERR} $$
+$$ \frac{}{swap.Q, v_1 :: v_2 :: S \rightarrow Q, v_2 :: v_1 :: S} $$
+4) add
+$$ \frac{\#S < 2}{add.Q, S \rightarrow ERR} $$
+$$ \frac{}{add.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 + v_2) ::S} $$
+5) sub
+$$ \frac{\#S < 2}{sub.Q, S \rightarrow ERR} $$
+$$ \frac{}{sub.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 - v_2) :: S} $$
+6) mul
+$$ \frac{\#S < 2}{mul.Q, S \rightarrow ERR} $$
+$$ \frac{}{mul.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 * v_2) :: S} $$
+7) div
+$$ \frac{\#S < 2}{div.Q, S \rightarrow ERR} $$
+$$ \frac{v_2 = 0}{div.Q, v_1 :: v_2 :: S \rightarrow ERR} $$
+$$ \frac{}{div.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 // v_2) :: S} $$
+8) rem
+$$ \frac{\#S < 2}{rem.Q, S \rightarrow ERR} $$
+$$ \frac{v_2 = 0}{rem.Q, v_1 :: v_2 :: S \rightarrow ERR} $$
+$$ \frac{}{rem.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 \% v_2) :: S} $$
