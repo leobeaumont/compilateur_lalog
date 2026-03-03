@@ -15,5 +15,8 @@ Les instructions se lisent mot par mot de gauche à droite. Voici ce que fait le
 ## Exercice 3
 ### 3.1 Explain using plain words the semantics of programs
 1) Cette sémantique stipule que si le nombre d'arguments donné au programme est différent de celui prévu, le programme doit produire une erreur.
-2) Cette sémantique stipule que si une paire instructions X stack se réduit récursivement en une erreur. Alors le programme correspondant doit produire une erreur.
-3) Cette sémantique stipule que si une paire instructions X stack se réduit récursivement en une paire ensemble vide X stack avec un élément v au sommet. Alors le programme correspondant doit rendre l'élément v.
+2) Cette sémantique stipule que si une paire 'instructions X stack' se réduit récursivement en une erreur. Alors le programme correspondant doit produire une erreur.
+3) Cette sémantique stipule que si une paire 'instructions X stack' se réduit récursivement en une paire 'ensemble vide X stack' avec un élément v au sommet de la pile. Alors le programme correspondant doit rendre l'élément v.
+### 3.2 A case is still missing, spot it out and give the corresponding rule
+Le cas manquant est celui où le programme termine ses instructions et que sa pile est vide. Il n'a alors aucune valeur à rendre. Il va donc produire une erreur. La sémantique correspondante est la suivante:
+$$ \frac{Q, v_1 :: \dots :: v_n :: \emptyset \rightarrow \emptyset, \emptyset}{v_1, \dots, v_n \Vdash n, Q \Rightarrow ERR} $$
