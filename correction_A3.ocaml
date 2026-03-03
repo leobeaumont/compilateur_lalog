@@ -1,0 +1,24 @@
+type bit = Zero | One
+
+type instruction =
+    | S of int * bit
+    | L of int * int
+    | N of int * int * int
+
+type program = instruction list
+
+type register = bit * bit * bit
+
+type state = register * program
+
+type memory = int -> bit
+
+let rec step memory state =
+    match state with
+    | reg, [] -> None
+    | reg, S(x, b)::rest -> set reg x b, rest
+    | reg, S(x, b)::rest when i<0 OR i>15 -> raise WrongMemoryAccess
+    | reg, L(i, x)::rest -> set reg x (memory i)
+
+Il faut ensuite définir memory et set... 
+Puis le nand etc...
