@@ -1,1 +1,25 @@
+# Fichiers et répertoires générés par Dune
+_build/
+
+# Fichiers générés par la compilation OCaml
+*.cmo
+*.cmi
+*.cma
+*.cmx
+*.cmxa
+*.cmxs
+*.o
+*.a
+*.exe
+
+# Dépendances locales opam
+_opam/
+
+# Fichiers de configuration de l'éditeur et temporaires
+*.swp
+*~
+.merlin
+.merlin-conf
+
+# Sujet
 *.pdf
