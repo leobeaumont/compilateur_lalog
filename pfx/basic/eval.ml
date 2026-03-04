@@ -13,8 +13,20 @@ let string_of_state (cmds,stack) =
 let step state =
   match state with
   | [], _ -> Error("Nothing to step",state)
+  (* Division by 0 *)
+  | Div :: q, v1 :: 0 :: stack -> Error("Division by 0", state)
+  | Rem :: q, v1 :: 0 :: stack -> Error("Division by 0", state)
   (* Valid configurations *)
-  | DefineMe :: q , stack          -> Ok (q, stack)
+  | Push n :: q , stack          -> Ok (q, n :: stack)
+  | Pop :: q, v :: stack         -> Ok (q, stack)
+  | Swap :: q, v1 :: v2 :: stack -> Ok (q, v2 :: v1 :: stack)
+  | Add :: q, v1 :: v2 :: stack  -> Ok (q, (v1 + v2) :: stack)
+  | Sub :: q, v1 :: v2 :: stack  -> Ok (q, (v1 - v2) :: stack)
+  | Mul :: q, v1 :: v2 :: stack  -> Ok (q, (v1 * v2) :: stack)
+  | Div :: q, v1 :: v2 :: stack  -> Ok (q, (v1 / v2) :: stack)
+  | Rem :: q, v1 :: v2 :: stack  -> Ok (q, (v1 mod v2) :: stack)
+  (* Not enough elements in stack *)
+  | command :: q, stack -> Error("Stack underflow", state)
 
 let eval_program (numargs, cmds) args =
   let rec execute = function
