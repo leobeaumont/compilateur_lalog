@@ -1,5 +1,12 @@
 type command =
-  DefineMe (* Question 4.1 *)
+  | Push of int
+  | Pop
+  | Swap
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | Rem
 
 type program = int * command list
 

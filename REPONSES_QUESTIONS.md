@@ -15,8 +15,8 @@ Les instructions se lisent mot par mot de gauche à droite. Voici ce que fait le
 ## Exercice 3
 ### 3.1 Explain using plain words the semantics of programs
 1) Cette sémantique stipule que si le nombre d'arguments donné au programme est différent de celui prévu, le programme doit produire une erreur.
-2) Cette sémantique stipule que si une paire 'instructions X stack' se réduit récursivement en une erreur. Alors le programme correspondant doit produire une erreur.
-3) Cette sémantique stipule que si une paire 'instructions X stack' se réduit récursivement en une paire 'ensemble vide X stack' avec un élément v au sommet de la pile. Alors le programme correspondant doit rendre l'élément v.
+2) Cette sémantique stipule que si une paire `instructions X stack` se réduit récursivement en une erreur. Alors le programme correspondant doit produire une erreur.
+3) Cette sémantique stipule que si une paire `instructions X stack` se réduit récursivement en une paire `ensemble vide X stack` avec un élément v au sommet de la pile. Alors le programme correspondant doit rendre l'élément v.
 ### 3.2 A case is still missing, spot it out and give the corresponding rule
 Le cas manquant est celui où le programme termine ses instructions et que sa pile est vide. Il n'a alors aucune valeur à rendre. Il va donc produire une erreur. La sémantique correspondante est la suivante:
 $$ \frac{Q, v_1 :: \dots :: v_n :: \emptyset \rightarrow \emptyset, \emptyset}{v_1, \dots, v_n \Vdash n, Q \Rightarrow ERR} $$
@@ -47,3 +47,18 @@ $$ \frac{}{div.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 // v_2) :: S} $$
 $$ \frac{\#S < 2}{rem.Q, S \rightarrow ERR} $$
 $$ \frac{v_2 = 0}{rem.Q, v_1 :: v_2 :: S \rightarrow ERR} $$
 $$ \frac{}{rem.Q, v_1 :: v_2 :: S \rightarrow Q, (v_1 \% v_2) :: S} $$
+## Exercice 4
+### 4.1 Propose the OCaml code for a type command describing the Pfx instructions. It should be in the file pfx/basic/ast.ml
+```oCaml
+type command =
+  | Push of int
+  | Pop
+  | Swap
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | Rem
+```
+Le type commande défini chaque instruction possible. Il y a un cas particulier pour l'instruction `push` qui prend un `int` en argument, on ajoute donc `of int` pour le préciser.
+
