@@ -62,4 +62,23 @@ type command =
 ```
 Le type commande défini chaque instruction possible. Il y a un cas particulier pour l'instruction `push` qui prend un `int` en argument, on ajoute donc `of int` pour le préciser. On vient également compléter la déclaration de type dans le fichier `pfx/basic/ast.mli`. On vient également compléter la fonction `string_of_command` qui associe à chaque instruction sa notation en texte. Pour cela on utilise le pattern matching. Le seul cas particulier est le `push` pour lequel on doit transformer son argument en `string` en utilisant `string_of_int` et la concaténation de `string`.
 ### 4.2 Write an OCaml function step that implements the small step reduction you defined above on Pfx instructions. It should be in the file pfx/basic/eval.ml
-A FAIRE
+```oCaml
+let step state =
+  match state with
+  | [], _ -> Error("Nothing to step",state)
+  (* Division by 0 *)
+  | Div :: q, v1 :: 0 :: stack -> Error("Division by 0", state)
+  | Rem :: q, v1 :: 0 :: stack -> Error("Division by 0", state)
+  (* Valid configurations *)
+  | Push n :: q , stack          -> Ok (q, n :: stack)
+  | Pop :: q, v :: stack         -> Ok (q, stack)
+  | Swap :: q, v1 :: v2 :: stack -> Ok (q, v2 :: v1 :: stack)
+  | Add :: q, v1 :: v2 :: stack  -> Ok (q, (v1 + v2) :: stack)
+  | Sub :: q, v1 :: v2 :: stack  -> Ok (q, (v1 - v2) :: stack)
+  | Mul :: q, v1 :: v2 :: stack  -> Ok (q, (v1 * v2) :: stack)
+  | Div :: q, v1 :: v2 :: stack  -> Ok (q, (v1 / v2) :: stack)
+  | Rem :: q, v1 :: v2 :: stack  -> Ok (q, (v1 mod v2) :: stack)
+  (* Not enough elements in stack *)
+  | command :: q, stack -> Error("Stack underflow", state)
+  ```
+  Pour l'implémentation de la fonction `step` nous utilisons le pattern matching. Une propriété intéressante du pattern matching en oCaml est que l'ordre d'apparation de chaque `case` dans le code détermine l'ordre dans lequel le matching est effectué. Nous pouvons donc utiliser cela pour dans un premier temps tester les cas d'erreurs comme la division par 0 ou l'absence d'instruction. Après s'être assuré que la commande ne mène pas à une erreur, nous poursuivons avec les cas valides des instructions (`push`, `pop`, `swap`, `add`, `sub`, `mul`, `div` et `rem`), qui effectuent chacune l'opération qui leur est associée sur la pile. Si auncune erreur et aucun pattern valide n'est matché alors il ne reste plus que le cas où il n'y a pas assez d'éléments dans la pile pour réaliser l'instruction, on renvoit donc une erreur sans se préoccuper de l'instruction. 
