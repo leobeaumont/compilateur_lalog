@@ -290,3 +290,5 @@ On commence par traiter le cas `Const n` qui correspond simplement à pousser `n
 Dans le cas d'une opération binaire (`Binop`), elle se décompose en trois éléments: l'opération `op` et les deux expressions `e1` et `e2` sur lesquelles l'opération est appliquée. Dans ce cas on appelle récursivement `generate` sur les expressions `e1` et `e2` pour terminer leur traitement. Ensuite on concatène le traitement de `e2`, puis le traitement de `e1` et enfin l'opération `op`. L'ordre est important car nous voulons que `e1` se trouve au sommet de la pile avec `e2` juste en dessous, suivi de l'opération `op` pour que les opérations non commutatives comme la soustractions fassent bien `e1 - e2` et non `e2 - e1`.
 
 Pour `Uminus` qui permet d'obtenir l'opposé d'une expression `e`, on appelle récursivement `generate` pour finir le traitement de `e`. On concatène le traitement de `e` avec l'instruction `push -1` et l'opération `mul`. Concrètement cela permet de multiplier l'expression `e` par -1 et donc d'obtenir son opposé.
+
+## Exercice 6
