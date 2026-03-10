@@ -183,23 +183,16 @@ let step state =
   (* Not enough elements in stack *)
   | command :: q, stack -> Error("Stack underflow", state)
   ```
-  Pour l'implémentation de la fonction `step` nous utilisons le pattern matching. Une propriété intéressante du pattern matching en oCaml est que l'ordre d'apparation de chaque `case` dans le code détermine l'ordre dans lequel le matching est effectué. Nous pouvons donc utiliser cela pour dans un premier temps tester les cas d'erreurs comme la division par 0 ou l'absence d'instruction. Après s'être assuré que la commande ne mène pas à une erreur, nous poursuivons avec les cas valides des instructions (`push`, `pop`, `swap`, `add`, `sub`, `mul`, `div` et `rem`), qui effectuent chacune l'opération qui leur est associée sur la pile. Si auncune erreur et aucun pattern valide n'est matché alors il ne reste plus que le cas où il n'y a pas assez d'éléments dans la pile pour réaliser l'instruction, on renvoit donc une erreur sans se préoccuper de l'instruction. 
-
-
+Pour l'implémentation de la fonction `step` nous utilisons le pattern matching. Une propriété intéressante du pattern matching en oCaml est que l'ordre d'apparation de chaque `case` dans le code détermine l'ordre dans lequel le matching est effectué. Nous pouvons donc utiliser cela pour dans un premier temps tester les cas d'erreurs comme la division par 0 ou l'absence d'instruction. Après s'être assuré que la commande ne mène pas à une erreur, nous poursuivons avec les cas valides des instructions (`push`, `pop`, `swap`, `add`, `sub`, `mul`, `div` et `rem`), qui effectuent chacune l'opération qui leur est associée sur la pile. Si auncune erreur et aucun pattern valide n'est matché alors il ne reste plus que le cas où il n'y a pas assez d'éléments dans la pile pour réaliser l'instruction, on renvoit donc une erreur sans se préoccuper de l'instruction.
 ## Exercice 5
-
-## 5.1 Propose a compilation schema of Expr in Pfx. Give its formal description. Notice that with the current definition of Pfx, we cannot implement variables.
-
-
-La compilation d’une expression du langage **Expr** vers le langage **Pfx** consiste à transformer l’arbre syntaxique de l’expression en une séquence d’instructions pour la machine à pile Pfx.  
+### 5.1 Propose a compilation schema of Expr in Pfx. Give its formal description. Notice that with the current definition of Pfx, we cannot implement variables.
+La compilation d’une expression du langage `Expr` vers le langage `Pfx` consiste à transformer l’arbre syntaxique de l’expression en une séquence d’instructions pour la machine à pile Pfx.  
 L’objectif est que l’exécution de cette séquence d’instructions laisse la valeur de l’expression au sommet de la pile.
 
 On note cette traduction :
-
 $$
 \llbracket e \rrbracket
 $$
-
 qui représente la séquence d’instructions Pfx générée à partir de l’expression $e$.
 
 Les règles de compilation sont les suivantes.
@@ -214,8 +207,8 @@ $$
 
 $$
 \llbracket Binop(Badd, e_1, e_2) \rrbracket =
-\llbracket e_1 \rrbracket \;
 \llbracket e_2 \rrbracket \;
+\llbracket e_1 \rrbracket \;
 add
 $$
 
@@ -223,8 +216,8 @@ $$
 
 $$
 \llbracket Binop(Bsub, e_1, e_2) \rrbracket =
-\llbracket e_1 \rrbracket \;
 \llbracket e_2 \rrbracket \;
+\llbracket e_1 \rrbracket \;
 sub
 $$
 
@@ -232,8 +225,8 @@ $$
 
 $$
 \llbracket Binop(Bmul, e_1, e_2) \rrbracket =
-\llbracket e_1 \rrbracket \;
 \llbracket e_2 \rrbracket \;
+\llbracket e_1 \rrbracket \;
 mul
 $$
 
@@ -241,8 +234,8 @@ $$
 
 $$
 \llbracket Binop(Bdiv, e_1, e_2) \rrbracket =
-\llbracket e_1 \rrbracket \;
 \llbracket e_2 \rrbracket \;
+\llbracket e_1 \rrbracket \;
 div
 $$
 
@@ -250,8 +243,8 @@ $$
 
 $$
 \llbracket Binop(Bmod, e_1, e_2) \rrbracket =
-\llbracket e_1 \rrbracket \;
 \llbracket e_2 \rrbracket \;
+\llbracket e_1 \rrbracket \;
 rem
 $$
 
@@ -265,3 +258,35 @@ mul
 $$
 
 Les variables ne peuvent pas être compilées dans cette version du langage Pfx, car la machine à pile ne possède pas de mécanisme pour stocker ou accéder à des variables. Leur implémentation est donc reportée à un exercice ultérieur.
+### 5.2 Define a function generate implementing the semantics you defined in previous question. It should be in the file expr/basic/toPfx.ml
+```oCaml
+let rec generate = function
+  | Const n ->
+      [Push n]
+
+  | Binop (op, e1, e2) ->
+      let c1 = generate e1 in
+      let c2 = generate e2 in
+      let op_cmd =
+        match op with
+        | Badd -> Add
+        | Bsub -> Sub
+        | Bmul -> Mul
+        | Bdiv -> Div
+        | Bmod -> Rem
+      in
+      c2 @ c1 @ [op_cmd]
+
+  | Uminus e ->
+      generate e @ [Push (-1); Mul]
+
+  | Var _ ->
+      failwith "Not yet supported"
+```
+La fonction `generate` traite les différents cas du langage `Expr` en suivant la logique définie dans la question `5.1`.
+
+On commence par traiter le cas `Const n` qui correspond simplement à pousser `n` sur la pile.
+
+Dans le cas d'une opération binaire (`Binop`), elle se décompose en trois éléments: l'opération `op` et les deux expressions `e1` et `e2` sur lesquelles l'opération est appliquée. Dans ce cas on appelle récursivement `generate` sur les expressions `e1` et `e2` pour terminer leur traitement. Ensuite on concatène le traitement de `e2`, puis le traitement de `e1` et enfin l'opération `op`. L'ordre est important car nous voulons que `e1` se trouve au sommet de la pile avec `e2` juste en dessous, suivi de l'opération `op` pour que les opérations non commutatives comme la soustractions fassent bien `e1 - e2` et non `e2 - e1`.
+
+Pour `Uminus` qui permet d'obtenir l'opposé d'une expression `e`, on appelle récursivement `generate` pour finir le traitement de `e`. On concatène le traitement de `e` avec l'instruction `push -1` et l'opération `mul`. Concrètement cela permet de multiplier l'expression `e` par -1 et donc d'obtenir son opposé.

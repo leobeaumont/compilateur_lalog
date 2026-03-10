@@ -17,7 +17,7 @@ let rec generate = function
         | Bdiv -> Div
         | Bmod -> Rem
       in
-      c1 @ c2 @ [op_cmd]
+      c2 @ c1 @ [op_cmd]
 
   | Uminus e ->
       generate e @ [Push (-1); Mul]
