@@ -1,6 +1,6 @@
 open Ast
-open Pfx.Basic.Ast
-open Expr.Common.BinOp
+open BasicPfx.Ast
+open BinOp
 
 let rec generate = function
   | Const n ->
@@ -24,5 +24,3 @@ let rec generate = function
 
   | Var _ ->
       failwith "Not yet supported"
-
-
