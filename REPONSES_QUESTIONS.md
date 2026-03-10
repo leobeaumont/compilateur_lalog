@@ -184,3 +184,84 @@ let step state =
   | command :: q, stack -> Error("Stack underflow", state)
   ```
   Pour l'implémentation de la fonction `step` nous utilisons le pattern matching. Une propriété intéressante du pattern matching en oCaml est que l'ordre d'apparation de chaque `case` dans le code détermine l'ordre dans lequel le matching est effectué. Nous pouvons donc utiliser cela pour dans un premier temps tester les cas d'erreurs comme la division par 0 ou l'absence d'instruction. Après s'être assuré que la commande ne mène pas à une erreur, nous poursuivons avec les cas valides des instructions (`push`, `pop`, `swap`, `add`, `sub`, `mul`, `div` et `rem`), qui effectuent chacune l'opération qui leur est associée sur la pile. Si auncune erreur et aucun pattern valide n'est matché alors il ne reste plus que le cas où il n'y a pas assez d'éléments dans la pile pour réaliser l'instruction, on renvoit donc une erreur sans se préoccuper de l'instruction. 
+
+
+## Exercice 5
+
+## 5.1 Propose a compilation schema of Expr in Pfx. Give its formal description. Notice that with the current definition of Pfx, we cannot implement variables.
+
+
+La compilation d’une expression du langage **Expr** vers le langage **Pfx** consiste à transformer l’arbre syntaxique de l’expression en une séquence d’instructions pour la machine à pile Pfx.  
+L’objectif est que l’exécution de cette séquence d’instructions laisse la valeur de l’expression au sommet de la pile.
+
+On note cette traduction :
+
+$$
+\llbracket e \rrbracket
+$$
+
+qui représente la séquence d’instructions Pfx générée à partir de l’expression $e$.
+
+Les règles de compilation sont les suivantes.
+
+**Constante**
+
+$$
+\llbracket Const(n) \rrbracket = push\ n
+$$
+
+**Addition**
+
+$$
+\llbracket Binop(Badd, e_1, e_2) \rrbracket =
+\llbracket e_1 \rrbracket \;
+\llbracket e_2 \rrbracket \;
+add
+$$
+
+**Soustraction**
+
+$$
+\llbracket Binop(Bsub, e_1, e_2) \rrbracket =
+\llbracket e_1 \rrbracket \;
+\llbracket e_2 \rrbracket \;
+sub
+$$
+
+**Multiplication**
+
+$$
+\llbracket Binop(Bmul, e_1, e_2) \rrbracket =
+\llbracket e_1 \rrbracket \;
+\llbracket e_2 \rrbracket \;
+mul
+$$
+
+**Division**
+
+$$
+\llbracket Binop(Bdiv, e_1, e_2) \rrbracket =
+\llbracket e_1 \rrbracket \;
+\llbracket e_2 \rrbracket \;
+div
+$$
+
+**Modulo**
+
+$$
+\llbracket Binop(Bmod, e_1, e_2) \rrbracket =
+\llbracket e_1 \rrbracket \;
+\llbracket e_2 \rrbracket \;
+rem
+$$
+
+**Moins unaire**
+
+$$
+\llbracket Uminus(e) \rrbracket =
+\llbracket e \rrbracket \;
+push\ (-1) \;
+mul
+$$
+
+Les variables ne peuvent pas être compilées dans cette version du langage Pfx, car la machine à pile ne possède pas de mécanisme pour stocker ou accéder à des variables. Leur implémentation est donc reportée à un exercice ultérieur.

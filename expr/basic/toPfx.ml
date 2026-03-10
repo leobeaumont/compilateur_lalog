@@ -1,7 +1,28 @@
 open Ast
+open Pfx.Basic.Ast
+open Expr.Common.BinOp
 
-let generate = function
-  | Const _ -> failwith "To implement"
-  | Binop(_,_,_) -> failwith "To implement"
-  | Uminus _ -> failwith "To implement"
-  | Var _ -> failwith "Not yet supported"
+let rec generate = function
+  | Const n ->
+      [Push n]
+
+  | Binop (op, e1, e2) ->
+      let c1 = generate e1 in
+      let c2 = generate e2 in
+      let op_cmd =
+        match op with
+        | Badd -> Add
+        | Bsub -> Sub
+        | Bmul -> Mul
+        | Bdiv -> Div
+        | Bmod -> Rem
+      in
+      c1 @ c2 @ [op_cmd]
+
+  | Uminus e ->
+      generate e @ [Push (-1); Mul]
+
+  | Var _ ->
+      failwith "Not yet supported"
+
+
