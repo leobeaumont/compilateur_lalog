@@ -4,9 +4,20 @@ open Parser
 open Utils
 open Location
 
+let print_token = function
+  | EOF -> print_string "EOF"
+  | ADD -> print_string "ADD"
+  | SUB -> print_string "SUB"
+  | MUL -> print_string "MUL"
+  | DIV -> print_string "DIV"
+  | REM -> print_string "REM"
+  | POP -> print_string "POP"
+  | SWAP -> print_string "SWAP"
+  | INT i -> Printf.printf "INT(%d)" i
+
 let rec examine_all lexbuf =
   let tok = token lexbuf in
-  Lexer.print_token tok;
+  print_token tok;
   print_string " ";
   match tok with
   | EOF -> ()
@@ -25,3 +36,11 @@ let compile file =
     print_endline ("Can't find file '" ^ file ^ "'")
 
 let _ = Arg.parse [] compile ""
+
+
+(*
+Pour tester le lexer seul exécuter les deux commandes suivantes:
+
+dune build
+dune exec ./pfx/basic/tests/lexer_only_test.exe -- pfx/basic/tests/ok_prog.pfx
+*)

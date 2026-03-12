@@ -14,7 +14,8 @@ let parse_eval file =
     begin
       try
         let pfx_prog = Parser.program Lexer.token lexbuf in
-         Eval.eval_program pfx_prog !args
+        print_string (Ast.string_of_program pfx_prog);
+        Eval.eval_program pfx_prog !args
       with Parser.Error -> print_string "Syntax error"
     end;
     close_in (input_file)

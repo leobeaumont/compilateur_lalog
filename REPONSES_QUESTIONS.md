@@ -424,3 +424,132 @@ let _ = Arg.parse [] compile ""
 
 L’appel à `Location.init` initialise les informations de localisation du buffer lexical, notamment le nom du fichier courant.  
 Grâce à cela, lorsqu’une erreur lexicale est levée, le compilateur est capable d’afficher un message d’erreur précis indiquant la ligne et la position de l’erreur dans le fichier source.
+
+## Exercice 8 
+
+### 8.1 Write a parser for the Pfx stack machine language.
+
+Le parser est défini dans le fichier `parser.mly` à l’aide de l’outil **Menhir**.  
+Son rôle est de transformer la suite de tokens produite par le lexer en une structure de données représentant le programme Pfx.
+
+Un programme Pfx est représenté par un couple :
+
+```
+(int * command list)
+```
+
+où :
+
+- le premier entier correspond au nombre d’arguments attendus par le programme,
+- la liste contient les instructions de la machine à pile.
+
+La règle principale du parser est la suivante :
+
+```ocaml
+program:
+  INT commands EOF
+    { ($1, $2) }
+```
+
+Cette règle indique qu’un programme commence par un entier indiquant le nombre d’arguments, suivi d’une suite de commandes, puis de la fin du fichier.
+
+La liste des commandes est définie récursivement :
+
+```ocaml
+commands:
+  | command commands { $1 :: $2 }
+  | { [] }
+```
+
+Cette définition permet de construire progressivement la liste des instructions du programme.
+
+Chaque instruction du langage est ensuite transformée en une commande de l’AST :
+
+```ocaml
+command:
+  | INT   { Push $1 }
+  | ADD   { Add }
+  | SUB   { Sub }
+  | MUL   { Mul }
+  | DIV   { Div }
+  | REM   { Rem }
+  | POP   { Pop }
+  | SWAP  { Swap }
+```
+
+Chaque token reconnu par le lexer correspond ainsi à une instruction de la machine Pfx.
+
+Le parser construit donc progressivement la représentation interne du programme sous forme d’un AST.
+
+### 8.2 Test it in combination with your Lexer.
+
+
+Une fois le parser implémenté, il peut être testé en combinaison avec le lexer et la machine virtuelle Pfx.
+
+Le programme principal `pfxVM.ml` lit un fichier `.pfx`, appelle le lexer puis le parser afin de construire l’AST du programme.  
+Cet AST est ensuite exécuté par la machine virtuelle grâce à la fonction `Eval.eval_program`.
+
+Le pipeline complet devient donc :
+
+```
+fichier .pfx
+    ↓
+lexer
+    ↓
+parser
+    ↓
+AST Pfx
+    ↓
+machine virtuelle
+```
+
+Par exemple, pour un fichier contenant :
+
+```
+0 5 18 add
+```
+
+le parser produit l’AST suivant :
+
+```
+(0, [Push 5; Push 18; Add])
+```
+
+La machine virtuelle exécute ensuite ce programme et renvoie le résultat :
+
+```
+23
+```
+
+Cette étape permet de vérifier que le lexer et le parser fonctionnent correctement ensemble avant de poursuivre les étapes suivantes du compilateur.
+
+Pour se faire, nous avons ajouté une fonction permettant d’afficher l’AST du programme Pfx. Cette fonction est définie dans `ast.ml` :
+
+```ocaml
+let string_of_program (args, cmds) =
+  Printf.sprintf "%i args: %s\n" args (string_of_commands cmds)
+```
+
+Elle convertit un programme Pfx représenté par `(int * command list)` en chaîne de caractères afin de visualiser facilement l’AST produit par le parser.
+
+Dans le fichier `pfx/pfxVM.ml`, nous affichons ensuite cet AST après l’analyse du programme :
+
+```ocaml
+let pfx_prog = Parser.program Lexer.token lexbuf in
+print_string (Ast.string_of_program pfx_prog);
+Eval.eval_program pfx_prog !args
+```
+
+Cette modification permet de vérifier que le parser construit correctement la structure interne du programme avant son exécution par la machine virtuelle.
+
+Il a également été nécessaire de modifier légèrement le fichier `lexer.mll`. Les fonctions utilisées pour tester le lexer indépendamment (`examine_all`, `compile` et `Arg.parse`) ont été supprimées, car le lexer est maintenant utilisé directement par le parser.
+
+Enfin, le lexer utilise désormais les tokens définis dans le parser en important le module correspondant :
+
+```ocaml
+{
+open Parser
+open Utils
+open Location
+}
+```
