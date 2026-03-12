@@ -349,3 +349,78 @@ Elle prend en argument un `lexbuf`, qui est une structure utilisée par le lexer
 La fonction examine ensuite le token obtenu. Si le token est `EOF`, cela signifie que la fin du fichier a été atteinte et la fonction s’arrête. Sinon, elle s’appelle récursivement afin d’analyser le reste du fichier.
 
 Cette fonction permet donc de parcourir entièrement un fichier source et d’afficher tous les tokens générés par le lexer. Elle constitue un moyen simple de vérifier que l’analyse lexicale du langage `Pfx` fonctionne correctement avant de connecter le lexer au parser.
+
+## Exercice 7
+
+### Modify your code from the previous exercise to be able to return the location of errors.
+
+Pour améliorer les messages d’erreur du compilateur, il est nécessaire d’indiquer la position exacte de l’erreur dans le fichier source.  
+OCaml fournit pour cela le module `Lexing`, qui contient un type `position` permettant de représenter la position courante dans le fichier analysé.
+
+Une position contient plusieurs informations :
+
+- `pos_fname` : le nom du fichier
+- `pos_lnum` : le numéro de la ligne
+- `pos_bol` : la position du début de la ligne
+- `pos_cnum` : le nombre de caractères depuis le début du fichier
+
+Dans cet exercice, on utilise le module `Location` fourni dans le projet.  
+Ce module fournit plusieurs éléments utiles pour gérer les positions dans les messages d’erreur.
+
+Les principaux éléments utilisés sont :
+
+- l’exception `Location.Error`, qui contient un message d’erreur et la localisation de cette erreur ;
+- le type `Location.t`, qui représente une zone du fichier (position de début et de fin) ;
+- la fonction `Location.init`, qui initialise le nom du fichier associé au buffer lexical ;
+- la fonction `Location.incr_line`, qui met à jour le numéro de ligne lorsqu’un retour à la ligne est rencontré ;
+- la fonction `Location.curr`, qui retourne la position courante dans le buffer.
+
+Pour intégrer la gestion des positions dans le lexer, on modifie certaines règles afin de mettre à jour les informations de localisation.
+
+```ocaml
+rule token = parse
+  | newline+        { Location.incr_line lexbuf; token lexbuf }
+  | blank+          { token lexbuf }
+  | eof             { EOF }
+
+  | number as nb    { mk_int nb }
+
+  | "add"           { ADD }
+  | "sub"           { SUB }
+  | "mul"           { MUL }
+  | "div"           { DIV }
+  | "rem"           { REM }
+  | "pop"           { POP }
+  | "swap"          { SWAP }
+
+  | _ as c ->
+      let loc = Location.curr lexbuf in
+      raise (Location.Error (loc, Printf.sprintf "Illegal character '%c'" c))
+```
+
+Dans cette version du lexer, lorsqu’un caractère invalide est rencontré, on récupère la position courante dans le fichier grâce à la fonction `Location.curr`.  
+Cette position est ensuite utilisée pour lever une exception `Location.Error` contenant à la fois le message d’erreur et la localisation précise de l’erreur.
+
+Ainsi, lorsqu’une erreur lexicale est détectée, le compilateur peut afficher un message indiquant non seulement le problème rencontré mais aussi la ligne et la position exacte dans le fichier source.  
+Cela permet à l’utilisateur d’identifier et de corriger plus facilement l’erreur dans son programme.
+
+Pour que ces informations de localisation soient correctement initialisées, il est également nécessaire de modifier la fonction `compile` afin d’associer le nom du fichier analysé au buffer lexical.
+
+```ocaml
+let compile file =
+  print_string ("File "^file^" is being treated!\n");
+  try
+    let input_file = open_in file in
+    let lexbuf = Lexing.from_channel input_file in
+    Location.init lexbuf file;
+    examine_all lexbuf;
+    print_newline ();
+    close_in input_file
+  with Sys_error _ ->
+    print_endline ("Can't find file '" ^ file ^ "'")
+
+let _ = Arg.parse [] compile ""
+```
+
+L’appel à `Location.init` initialise les informations de localisation du buffer lexical, notamment le nom du fichier courant.  
+Grâce à cela, lorsqu’une erreur lexicale est levée, le compilateur est capable d’afficher un message d’erreur précis indiquant la ligne et la position de l’erreur dans le fichier source.

@@ -1,5 +1,7 @@
 {
 open Parser
+open Utils
+open Location
 
 let print_token = function
   | EOF -> print_string "EOF"
@@ -23,7 +25,7 @@ let digit = ['0'-'9']
 let number = digit+
 
 rule token = parse
-  | newline+         { token lexbuf }
+  | newline+         { Location.incr_line lexbuf; token lexbuf }
   | blank+           { token lexbuf }
   | eof              { EOF }
 
@@ -36,8 +38,11 @@ rule token = parse
   | "rem"            { REM }
   | "pop"            { POP }
   | "swap"           { SWAP }
-
-  | _ as c           { failwith (Printf.sprintf "Illegal character '%c': " c) }
+    
+  | _ as c {
+    let loc = Location.curr lexbuf in
+    raise (Location.Error (Printf.sprintf "Illegal character '%c'" c, loc))
+  }
 
 {
 let rec examine_all lexbuf =
@@ -53,6 +58,7 @@ let compile file =
   try
     let input_file = open_in file in
     let lexbuf = Lexing.from_channel input_file in
+    Location.init lexbuf file;
     examine_all lexbuf;
     print_newline ();
     close_in input_file
