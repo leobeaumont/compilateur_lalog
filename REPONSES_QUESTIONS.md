@@ -290,3 +290,62 @@ On commence par traiter le cas `Const n` qui correspond simplement à pousser `n
 Dans le cas d'une opération binaire (`Binop`), elle se décompose en trois éléments: l'opération `op` et les deux expressions `e1` et `e2` sur lesquelles l'opération est appliquée. Dans ce cas on appelle récursivement `generate` sur les expressions `e1` et `e2` pour terminer leur traitement. Ensuite on concatène le traitement de `e2`, puis le traitement de `e1` et enfin l'opération `op`. L'ordre est important car nous voulons que `e1` se trouve au sommet de la pile avec `e2` juste en dessous, suivi de l'opération `op` pour que les opérations non commutatives comme la soustractions fassent bien `e1 - e2` et non `e2 - e1`.
 
 Pour `Uminus` qui permet d'obtenir l'opposé d'une expression `e`, on appelle récursivement `generate` pour finir le traitement de `e`. On concatène le traitement de `e` avec l'instruction `push -1` et l'opération `mul`. Concrètement cela permet de multiplier l'expression `e` par -1 et donc d'obtenir son opposé.
+
+## Exercice 6
+
+### 6.1 Write a lexer for the Pfx stack machine language. Complete the provided lexer.mll of pfx/basic.
+
+```ocaml
+rule token = parse
+  | newline+         { token lexbuf }
+  | blank+           { token lexbuf }
+  | eof              { EOF }
+
+  | number as nb     { mk_int nb }
+
+  | "add"            { ADD }
+  | "sub"            { SUB }
+  | "mul"            { MUL }
+  | "div"            { DIV }
+  | "rem"            { REM }
+  | "pop"            { POP }
+  | "swap"           { SWAP }
+
+  | _ as c           { failwith (Printf.sprintf "Illegal character '%c': " c) }
+```
+
+Le fichier `lexer.mll` définit un analyseur lexical pour le langage `Pfx` en utilisant l’outil `ocamllex`. Le rôle du lexer est de transformer une suite de caractères lue dans un fichier `.pfx` en une suite de tokens qui seront ensuite utilisés par le parser.
+
+Les premières règles permettent d’ignorer certains caractères qui ne sont pas significatifs pour l’analyse syntaxique. Les règles `newline+` et `blank+` correspondent respectivement aux retours à la ligne et aux espaces. Dans ces cas, le lexer appelle récursivement la fonction `token` afin de continuer l’analyse sans produire de token.
+
+La règle `eof` correspond à la fin du fichier et produit le token `EOF`.
+
+La règle `number as nb` permet de reconnaître une suite de chiffres représentant un entier. La chaîne correspondante est convertie en entier grâce à la fonction `mk_int`, qui produit un token `INT`.
+
+Les règles suivantes reconnaissent les différentes instructions du langage `Pfx`. Chaque mot clé du langage est associé à un token correspondant : `add`, `sub`, `mul`, `div`, `rem`, `pop` et `swap`.
+
+Enfin, la dernière règle capture tout caractère qui ne correspond à aucune règle précédente. Dans ce cas, une exception est levée indiquant qu’un caractère illégal a été rencontré dans le fichier source.
+
+---
+
+### 6.2 Reuse this code to be able to parse a file containing a Pfx program and prints all the tokens encountered in the process.
+
+```ocaml
+let rec examine_all lexbuf =
+  let result = token lexbuf in
+  print_token result;
+  print_string " ";
+  match result with
+  | EOF -> ()
+  | _   -> examine_all lexbuf
+```
+
+La fonction `examine_all` permet de tester le fonctionnement du lexer en affichant tous les tokens reconnus dans un fichier `.pfx`.
+
+Elle prend en argument un `lexbuf`, qui est une structure utilisée par le lexer pour lire le flux de caractères provenant du fichier d’entrée.
+
+À chaque appel, la fonction appelle `token lexbuf` afin d’obtenir le prochain token reconnu par le lexer. Ce token est ensuite affiché grâce à la fonction `print_token`. Après l’affichage, un espace est ajouté afin de rendre la sortie plus lisible.
+
+La fonction examine ensuite le token obtenu. Si le token est `EOF`, cela signifie que la fin du fichier a été atteinte et la fonction s’arrête. Sinon, elle s’appelle récursivement afin d’analyser le reste du fichier.
+
+Cette fonction permet donc de parcourir entièrement un fichier source et d’afficher tous les tokens générés par le lexer. Elle constitue un moyen simple de vérifier que l’analyse lexicale du langage `Pfx` fonctionne correctement avant de connecter le lexer au parser.
