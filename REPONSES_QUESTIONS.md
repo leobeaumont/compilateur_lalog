@@ -753,3 +753,5 @@ Le résultat final est donc 11.
 
 
 Grâce à ces modifications, la machine **Pfx** peut maintenant manipuler des séquences exécutables et accéder aux arguments dans la pile.
+
+## Exercice 10
