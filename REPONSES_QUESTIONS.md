@@ -755,3 +755,5 @@ Le résultat final est donc 11.
 Grâce à ces modifications, la machine **Pfx** peut maintenant manipuler des séquences exécutables et accéder aux arguments dans la pile.
 
 ## Exercice 10
+
+### 10.1 : Give the compiled version of the expression (λx.x + 1) 2. Then describe step by step the evaluation of its Pfx translation.
