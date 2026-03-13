@@ -13,6 +13,10 @@ let print_token = function
   | REM -> print_string "REM"
   | POP -> print_string "POP"
   | SWAP -> print_string "SWAP"
+  | EXEC -> print_string "EXEC"
+  | GET -> print_string "GET"
+  | LPAR -> print_string "LPAR"
+  | RPAR -> print_string "RPAR"
   | INT i -> Printf.printf "INT(%d)" i
 
 let rec examine_all lexbuf =

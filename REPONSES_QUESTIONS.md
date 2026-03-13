@@ -555,3 +555,201 @@ open Location
 ```
 
 ## Exercice 9 
+
+
+### 9.1 Do we need to change the rules for the already defined constructs?
+
+Non, il n’est pas nécessaire de modifier les règles des constructions déjà définies.
+
+Les instructions existantes du langage Pfx (`push`, `pop`, `swap`, `add`, `sub`, `mul`, `div`, `rem`) manipulent uniquement la pile en effectuant des opérations arithmétiques ou des réorganisations des éléments présents sur la pile. Leur comportement reste donc correct même si la pile peut désormais contenir deux types d’objets : des entiers et des séquences exécutables.
+
+Les nouvelles constructions introduites (`Q` pour une séquence exécutable, `exec`, et `get`) ajoutent simplement de nouvelles possibilités d’interaction avec la pile, mais elles ne modifient pas la sémantique des instructions existantes.
+
+Ainsi, les règles déjà définies pour les anciennes instructions restent valides et peuvent être conservées telles quelles. Il suffit simplement d’ajouter de nouvelles règles pour décrire le comportement des nouvelles instructions.
+
+### 9.2 Give the formal semantics of these new constructions.
+
+Nous introduisons trois nouvelles constructions dans le langage Pfx : les séquences exécutables `(Q)`, l'instruction `exec` et l'instruction `get`. Ces constructions permettent de manipuler du code comme des données sur la pile.
+
+La pile peut désormais contenir deux types d'éléments : des entiers ou des séquences exécutables.
+
+---
+
+**Executable sequence**
+
+Lorsqu'une séquence d'instructions `(Q')` est rencontrée, elle est poussée sur la pile comme une valeur.
+
+$$
+(Q') , S \rightarrow Q' :: S
+$$
+
+Autrement dit, la séquence `Q` n'est pas exécutée immédiatement mais stockée sur la pile.
+
+---
+
+**Exec**
+
+L'instruction `exec` dépile une séquence exécutable et l'ajoute au début de la séquence d'instructions en cours d'exécution.
+
+$$
+exec . Q , Q' :: S \rightarrow Q' . Q , S
+$$
+
+Cela signifie que la séquence `Q'` est exécutée avant la suite du programme.
+
+---
+
+**Get**
+
+L'instruction `get` permet d'accéder à un élément déjà présent dans la pile. Elle dépile un entier `i` et copie sur le sommet de la pile le `i`-ième élément de la pile.
+
+$$
+get . Q , i :: v_1 :: \dots :: v_n :: S \rightarrow Q , v_i :: v_1 :: \dots :: v_n :: S
+$$
+
+Cette opération échoue si l'indice demandé ne correspond pas à un élément présent dans la pile.
+
+$$
+\frac{i > n}
+{get . Q , i :: v_1 :: \dots :: v_n :: S \rightarrow Err}
+$$
+
+---
+
+Ces nouvelles règles permettent d'implémenter des comportements proches des fonctions en manipulant des séquences exécutables directement sur la pile.
+
+### 9.3 Extend the lexer and parser of Pfx to include these changes
+
+Afin de pouvoir compiler les fonctions du langage `Expr`, le langage **Pfx** doit être étendu avec trois nouvelles constructions :
+
+- une **séquence exécutable `(Q)`**
+- l'instruction **`exec`**
+- l'instruction **`get`**
+
+Ces nouvelles instructions permettent de manipuler du code comme une donnée dans la pile et d'accéder aux arguments lors de l'exécution d'une fonction.
+
+---
+
+**Modification du type `command` dans `pfx/basic/ast.ml`** 
+
+
+```ocaml
+type command =
+  | Push of int
+  | Pop
+  | Swap
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | Rem
+  | Exec
+  | Get
+  | Seq of command list
+```
+
+Le type `command` est étendu afin de représenter les nouvelles constructions du langage :
+
+`Exec` correspond à l’instruction `exec`, qui permet d’exécuter une séquence de commandes présente au sommet de la pile.
+
+`Get` correspond à l’instruction `get`, qui permet d’accéder à un élément de la pile selon son indice.
+
+`Seq of command list` représente une **séquence exécutable** (Q), c’est-à-dire une liste de commandes pouvant être stockée dans la pile puis exécutée ultérieurement.
+
+Ainsi, la pile peut désormais contenir deux types de valeurs : des entiers et des séquences de commandes.
+
+Cette extension est nécessaire pour implémenter le mécanisme d’appel de fonctions.
+
+**Extensions du parser `pfx/basic/parser.mly`**
+
+Ajout de nouveaux tokens :
+
+```ocaml
+%token EXEC GET LPAR RPAR
+```
+
+Ajout de nouvelles règles dans la grammaire :
+
+```ocaml
+command:
+  | n=INT { Push n }
+  | ADD { Add }
+  | SUB { Sub }
+  | MUL { Mul }
+  | DIV { Div }
+  | REM { Rem }
+  | POP { Pop }
+  | SWAP { Swap }
+  | EXEC { Exec }
+  | GET { Get }
+  | LPAR cmds=commands RPAR { Seq cmds }
+```
+
+Le parser doit être capable de reconnaître les nouvelles constructions du langage Pfx :
+
+-**EXEC** et **GET** sont ajoutés comme nouvelles instructions de la machine.
+
+-**LPAR** et **RPAR** permettent d’identifier une séquence exécutable `(Q)`.
+
+Lorsque le parser reconnaît une séquence `(Q)`, celle-ci est transformée en valeur OCaml `Seq cmds` où cmds représente la liste des commandes contenues dans la séquence.
+
+Par exemple, l'expression : `(0 get 1 add)` est transformée en `Seq [Push 0; Get; Push 1; Add]`
+
+**Extensions du Lexer `pfx/basic/lexer.mll`**
+
+Ajout des règles suivantes :
+
+```Ocaml
+| "exec" { EXEC }
+| "get"  { GET }
+| "("    { LPAR }
+| ")"    { RPAR }
+```
+Le lexer doit reconnaître les nouveaux mots-clés introduits dans le langage ainsi que les paranthèses qui permettent de définir des séquences exécutables. Ces éléments sont convertis en tokens qui seront ensuite utilisés par le parseur pour construire l'AST.
+
+**Extension de l'évaluation `pfx/basic/eval.ml`**
+
+Ajout de nouveaux cas dans la fonction `step`:
+
+```Ocaml
+| Seq cmds :: q, stack ->
+    Ok (q, VSeq cmds :: stack)
+
+| Exec :: q, VSeq cmds :: stack ->
+    Ok (cmds @ q, stack)
+
+| Get :: q, i :: stack ->
+    let v = List.nth stack i in
+    Ok (q, v :: stack)
+```
+Ces règles définissent la sémantique opérationnelle des nouvelles instructions :
+
+1. `Seq` place une séquence de commandes sur la pile comme une valeur.
+
+2. `exec` retire cette séquence de la pile et l’insère au début de la liste des commandes à exécuter.
+
+3. `get` récupère l’élément situé à la position `i` dans la pile et le copie au sommet.
+
+Ce mécanisme permet d’implémenter l’appel de fonctions en manipulant du code comme des données dans la pile.
+
+**Exemple de programme Pfx :  1 (0 get 1 add) exec**
+
+Exécution avec ` dune exec ./pfx/pfxVM.exe -- -a 10 file.pfx`
+Résulat : ` = 11 `
+
+**Explication**
+
+1. La pile contient initialement l’argument 10.
+
+2. La séquence (0 get 1 add) est poussée sur la pile.
+
+3. L’instruction exec exécute cette séquence.
+
+4. 0 get récupère l’argument 10.
+
+5. 1 add calcule 10 + 1.
+
+Le résultat final est donc 11.
+
+
+Grâce à ces modifications, la machine **Pfx** peut maintenant manipuler des séquences exécutables et accéder aux arguments dans la pile.

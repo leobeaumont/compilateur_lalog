@@ -28,6 +28,12 @@ rule token = parse
   | "pop"  { POP }
   | "swap" { SWAP }
 
+  | "exec" { EXEC }
+  | "get"  { GET }
+
+  | "(" { LPAR }
+  | ")" { RPAR }
+
   | _ as c {
       let loc = Location.curr lexbuf in
       raise (Location.Error (Printf.sprintf "Illegal character '%c'" c, loc))

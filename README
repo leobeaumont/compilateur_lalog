@@ -39,7 +39,7 @@ How to…
 
 …execute and test?
 
-  dune exec ./pfx/pfxVM.exe -- TESTFILE.pfx -a 12 -a 52
+  dune exec ./pfx/pfxVM.exe -- -a 12 -a 52 TESTFILE.pfx
 
 
 ===============

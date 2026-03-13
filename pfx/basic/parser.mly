@@ -7,6 +7,8 @@
  **************)
 
 %token ADD SUB MUL DIV REM POP SWAP
+%token EXEC GET
+%token LPAR RPAR
 %token <int> INT
 %token EOF
 
@@ -41,5 +43,8 @@ command:
   | REM    { Rem }
   | POP    { Pop }
   | SWAP   { Swap }
+  | EXEC   { Exec }
+  | GET    { Get }
+  | LPAR cmds=commands RPAR { Seq cmds }
 
 %%
