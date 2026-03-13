@@ -20,7 +20,7 @@ Les opérations les plus courantes sur une pile sont :
 
 Le schéma suivant illustre les différentes étapes de l'exécution :
 
-![Execution de la pile](images/steps.png)
+![Execution de la pile](images/steps_exercice2.png)
 
 ## Exercice 3
 
@@ -53,7 +53,6 @@ La règle correspondante peut être écrite comme suit :
 
 $$ \frac{Q, v_1 :: \dots :: v_n :: \emptyset \rightarrow^* \emptyset, \emptyset}{v_1, \dots, v_n \Vdash n, Q \Rightarrow ERR} $$
 
-## Exercice 3
 
 ### 3.3 Give the rules describing the small step semantics for instruction sequences. Beware to cover all cases of runtime errors.
 
@@ -87,7 +86,7 @@ $$
 **Sub**
 
 $$
-sub . Q , n_1 :: n_2 :: S \rightarrow Q , (n_2 - n_1) :: S
+sub . Q , n_1 :: n_2 :: S \rightarrow Q , (n_1 - n_2 ) :: S
 $$
 
 **Mul**
@@ -99,13 +98,13 @@ $$
 **Div**
 
 $$
-\frac{n_1 \neq 0}{div . Q , n_1 :: n_2 :: S \rightarrow Q , (n_2 / n_1) :: S}
+\frac{n_1 \neq 0}{div . Q , n_1 :: n_2 :: S \rightarrow Q , (n_1 / n_2) :: S}
 $$
 
 **Rem**
 
 $$
-\frac{n_1 \neq 0}{rem . Q , n_1 :: n_2 :: S \rightarrow Q , (n_2 \bmod n_1) :: S}
+\frac{n_1 \neq 0}{rem . Q , n_1 :: n_2 :: S \rightarrow Q , (n_1 \bmod n_2) :: S}
 $$
 
 **Erreurs d'exécution**
@@ -754,6 +753,267 @@ Le résultat final est donc 11.
 
 Grâce à ces modifications, la machine **Pfx** peut maintenant manipuler des séquences exécutables et accéder aux arguments dans la pile.
 
+
 ## Exercice 10
 
-### 10.1 : Give the compiled version of the expression (λx.x + 1) 2. Then describe step by step the evaluation of its Pfx translation.
+### 10.1 Give the compiled version of the expression $(\lambda x. x + 1)\ 2$. Then describe step by step the evaluation of its Pfx translation.
+
+Dans cette nouvelle version du compilateur, les fonctions sont traduites en **executable sequences** et les applications utilisent l’instruction `exec` pour exécuter ces séquences.
+
+- Une abstraction de fonction $\lambda x.e$ est traduite en une **executable sequence** `( Q )` contenant la compilation de son corps.
+- Une application `e1 e2` est traduite en :
+  1. le code de l’argument,
+  2. le code de la fonction,
+  3. l’instruction `exec` pour exécuter la fonction,
+  4. puis un `pop` pour retirer l’argument de la pile.
+
+---
+
+### Compilation de l'expression
+
+L’expression :
+
+$$(\lambda x. x + 1)\ 2$$
+
+se compile de la manière suivante.
+
+L’argument : $2$ devient `push 2`
+
+Le corps de la fonction est $$ x+1 $$ Il faut accéder à l'argument `x`. Dans la pile, l'argument se trouve au sommet, on peut donc l'obtenir avec `push 0 get `. 
+
+Le calcul complet devient donc : ` push 0 get push 1 add `.
+
+La fonction complète est donc traduite en **executable sequence** : `( push 0 get push 1 add )`.
+
+**Programme Pfx obtenu :**
+
+`0 push 2 (push 0 get push 1 add ) exec swap pop `
+
+**Evaluation pas à pas**
+
+
+![Execution de la pile](images/steps_exercice10_1.png)
+
+
+Ce résultat correspond bien à l’évaluation de l’expression :
+
+$$
+(\lambda x. x + 1)\ 2 = 3
+$$
+
+### 10.2 Give the formal rule for transformation.
+
+Dans cette nouvelle version du compilateur, la traduction de **Expr vers Pfx** doit prendre en compte les fonctions et leur application.  
+Pour cela, on introduit un environnement $\mathcal{P}$ qui associe chaque variable à sa **profondeur dans la pile**.
+
+La traduction a la forme :
+
+$$
+\mathcal{P} \vdash e \Rightarrow Q
+$$
+
+où :
+
+- $e$ est une expression du langage **Expr**,
+- $\mathcal{P}$ est un environnement associant les variables à leur position dans la pile,
+- $Q$ est la séquence d’instructions **Pfx** produite.
+
+---
+
+### Règle pour une variable
+
+Si une variable $x$ est associée à une profondeur $i$ dans l’environnement $\mathcal{P}$, alors sa valeur est récupérée dans la pile avec l’instruction `get`.
+
+$$
+\frac{\mathcal{P}(x) = i}
+{\mathcal{P} \vdash x \Rightarrow push\ i \; get}
+$$
+
+---
+
+### Règle pour une abstraction de fonction
+
+Une abstraction $\lambda x.e$ est traduite en une **executable sequence** contenant la compilation du corps de la fonction.
+
+Lorsque l’on compile le corps, le paramètre $x$ se trouve au sommet de la pile, donc sa profondeur est $0$.
+
+$$
+\frac{\mathcal{P}[x \mapsto 0] \vdash e \Rightarrow Q}
+{\mathcal{P} \vdash \lambda x.e \Rightarrow (Q)}
+$$
+
+---
+
+### Règle pour l’application
+
+Pour une application $e_1\ e_2$ :
+
+1. on calcule d’abord l’argument,
+2. puis la fonction,
+3. on exécute la fonction avec `exec`,
+4. et on retire l’argument de la pile avec `pop`.
+
+$$
+\frac{
+\mathcal{P} \vdash e_2 \Rightarrow Q_2
+\qquad
+\mathcal{P} \vdash e_1 \Rightarrow Q_1
+}
+{
+\mathcal{P} \vdash e_1\ e_2 \Rightarrow Q_2\ Q_1\ exec\ pop
+}
+$$
+
+---
+
+Ces règles décrivent formellement comment les **abstractions de fonctions** et les **applications** sont traduites du langage **Expr** vers le langage **Pfx**, en utilisant la pile pour représenter l’environnement des variables. 
+
+### 10.3 Provide a new version of `generate`.
+
+Pour supporter les **fonctions** et leur **application**, la fonction `generate` doit être modifiée afin de gérer les nouveaux constructeurs de l’AST :
+
+- `Fun`
+- `App`
+- `Var`
+
+Ces nouvelles constructions nécessitent l’introduction d’un **environnement** associant chaque variable à sa **profondeur dans la pile**.
+
+Cet environnement est représenté par une liste : `(string*int) list` 
+qui associe une variable à sa position dans la pile.
+
+---
+
+### Gestion des variables
+
+Lorsqu’une variable est rencontrée, on récupère sa profondeur dans l’environnement puis on utilise l’instruction `get` pour copier la valeur correspondante dans la pile.
+
+```ocaml
+| Var x ->
+    let depth =
+      try List.assoc x env
+      with Not_found -> failwith ("Unbound variable: " ^ x)
+    in
+    [Push depth; Get]
+```
+
+### Décalage de l'environnment
+
+Lorsque l’on pousse une valeur sur la pile, la profondeur de toutes les variables déjà présentes doit être augmentée de 1.
+
+On introduit donc une fonction `shift`:
+
+
+```ocaml
+let shift env =
+  List.map (fun (x, d) -> (x, d + 1)) env
+```
+
+### Compilation des fonctions
+
+Une abstraction de fonction $λx.e$ est traduite en executable sequence.
+
+Le paramètre $x$ est ajouté à l’environnement avec une profondeur $0$, puisqu’il se trouve au sommet de la pile au moment de l’exécution de la fonction.
+
+```ocaml
+| Fun (x, e) ->
+    let body =
+      generate ((x, 0) :: shift env) e
+    in
+    [ExecSeq body]
+```
+
+### Compilation des applications
+
+Une application `e1 e2` est compilée de la manière suivante :
+
+1.  on compile d’abord l’argument,
+2. puis la fonction,
+3. on exécute la fonction avec `exec`,
+4. et on retire l’argument de la pile avec `pop`.
+
+```ocaml
+| App (e1, e2) ->
+    let c2 = generate env e2 in
+    let c1 = generate (shift env) e1 in
+    c2 @ c1 @ [Exec; Pop]
+```
+
+
+## 10.4 Give the compiled version of the expression $((\lambda x.\lambda y.(x - y))\ 12)\ 8$. Then describe step by step the evaluation of its Pfx translation. What do you think of the result? What is happening?
+
+Considérons l'expression :
+
+$$
+((\lambda x.\lambda y.(x - y))\ 12)\ 8
+$$
+
+Cette expression correspond à une fonction qui prend un argument `x`, puis retourne une fonction qui prend `y` et calcule `x - y`.
+
+---
+
+### Compilation de l'expression
+
+#### Environnement de profondeur P
+
+Lors de l'exécution de la fonction interne $\lambda y.(x - y)$, la pile contient :
+```
+y · x · (reste)
+```
+
+| Profondeur | Valeur | Variable |
+|:---:|:---:|:---:|
+| 0 | y | y |
+| 1 | x | x |
+
+Donc **P = { y → 0, x → 1 }**
+
+#### Corps `x - y`
+
+- accéder à `y` → `push 0 get`
+- accéder à `x` → `push 1 get`
+- calculer `x - y` → `swap sub`
+
+Le corps devient : `push 0 get  push 1 get  swap sub`
+
+#### Fonction interne $\lambda y.(x - y)$
+
+On enveloppe le corps dans une séquence exécutable et on ajoute `swap pop` pour nettoyer `y` après exécution :
+```
+( push 0 get  push 1 get  swap sub  swap pop )
+```
+
+#### Fonction externe $\lambda x.\lambda y.(x - y)$
+
+On enveloppe la fonction interne et on ajoute `swap pop` pour nettoyer `x` après exécution :
+```
+( ( push 0 get  push 1 get  swap sub  swap pop )  swap pop )
+```
+
+#### Programme complet
+```pfx
+0
+push 8
+push 12
+( ( push 0 get  push 1 get  swap sub  swap pop )  swap pop )
+exec
+exec
+```
+
+**Evaluation pas à pas**
+
+![Execution de la pile](images/steps_exercice10_4_1.png)
+![Execution de la pile](images/steps_exercice10_4_2.png)
+![Execution de la pile](images/steps_exercice10_4_3.png)
+
+
+**Le résultat obtenu n'est pas celui obtenu $ 12-8 = 4 \neq 0 $**
+
+
+Le problème vient des **variables libres**. La fonction interne $\lambda y.(x - y)$ utilise `x` qui est défini dans le contexte de la fonction externe. Or :
+
+- Au moment du 1er `exec`, `x = 12` est sur la pile
+- Mais le `swap pop` du 1er `exec` **supprime `x = 12`** avant que la fonction interne soit appelée
+- Quand la fonction interne s'exécute, elle cherche `x` à la profondeur 1, mais cette position contient `8` (l'argument `y`) et non `12`
+
+La valeur de `x` aurait dû être **capturée et stockée** au moment de la création de la fonction interne. C'est exactement le rôle des **closures** : elles embarquent les valeurs des variables libres directement dans la séquence exécutable, indépendamment de l'état de la pile au moment de l'appel. La suite du projet introduira justement des **closures**.
+
