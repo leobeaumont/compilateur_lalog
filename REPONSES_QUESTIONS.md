@@ -1017,3 +1017,7 @@ Le problème vient des **variables libres**. La fonction interne $\lambda y.(x -
 
 La valeur de `x` aurait dû être **capturée et stockée** au moment de la création de la fonction interne. C'est exactement le rôle des **closures** : elles embarquent les valeurs des variables libres directement dans la séquence exécutable, indépendamment de l'état de la pile au moment de l'appel. La suite du projet introduira justement des **closures**.
 
+
+## Exercice 11
+
+### 11.1: What is the translation in the syntax of Expr already defined of a new let x = e1 in e2?
