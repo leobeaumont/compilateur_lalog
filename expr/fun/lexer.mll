@@ -34,6 +34,9 @@ rule token = parse
   | "%"      { MOD }
   | "("      { LPAR }
   | ")"      { RPAR }
+  | "let"   { LET }
+  | "in"    { IN }
+  | "="     { EQUAL }
   (* For function support *)
   | "fun"    { FUN }
   | "->"     { RA }

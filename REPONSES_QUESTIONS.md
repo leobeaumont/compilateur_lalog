@@ -1021,3 +1021,47 @@ La valeur de `x` aurait dû être **capturée et stockée** au moment de la cré
 ## Exercice 11
 
 ### 11.1: What is the translation in the syntax of Expr already defined of a new let x = e1 in e2?
+
+
+Un *syntactic sugar* est une syntaxe plus agréable à écrire qui n'ajoute aucune nouvelle capacité au langage — elle abrège simplement quelque chose qui existe déjà.
+
+### Traduction
+
+`let x = e1 in e2` est exactement équivalent à :
+
+$$
+(\lambda x . e_2) \ e_1
+$$
+
+## 11.2 What part of the code must be modified to get support for `let`?
+
+Puisque `let x = e1 in e2` est un simple *syntactic sugar* pour $(\lambda x . e_2) \ e_1$,
+seuls le **lexer** et le **parser** doivent être modifiés. L'AST, l'évaluateur et le
+compilateur vers Pfx restent inchangés.
+
+### Modifications du lexer `expr/fun/lexer.mll`
+
+Ajouter les trois nouveaux tokens :
+```ocaml
+| "let"   { LET }
+| "in"    { IN }
+| "="     { EQUAL }
+```
+
+### Modifications du parser `expr/fun/parser.mly`
+
+Déclarer les nouveaux tokens :
+```ocaml
+%token LET IN EQUAL
+```
+
+Ajouter la règle de traduction dans `expr` :
+```ocaml
+| LET id=IDENT EQUAL e1=expr IN e2=expr { App(Fun(id, e2), e1) }
+```
+
+### Conclusion
+
+La règle `App(Fun(id, e2), e1)` traduit directement `let x = e1 in e2` en
+$(\lambda x . e_2) \ e_1$ sans aucune modification de l'AST, de l'évaluateur
+ou du compilateur vers Pfx.
