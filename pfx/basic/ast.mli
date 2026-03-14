@@ -10,6 +10,7 @@ type command =
   | Rem
   | Exec
   | Get
+  | Append
   | Seq of command list
 
 (* The type for programs *)

@@ -33,12 +33,22 @@ let rec generate_aux env = function
       generate_aux env e @ [Push (-1); Mul]
 
   | Fun (x, e) ->
-      let body = generate_aux ((x, 0) :: shift env) e in
-      [Seq body]
+      let free_vars = List.filter (fun (v, _) -> v <> x) env in
+      let free_env = List.mapi (fun i (v, _) -> (v, i)) free_vars in
+      let x_depth = List.length free_vars in
+      let full_env = (x, x_depth) :: free_env in
+      let body = generate_aux full_env e in
+      if free_vars = [] then
+        [Seq (body @ [Swap; Pop])]
+      else
+        let inner = [Seq (body @ [Swap; Pop])] in
+        List.fold_left
+          (fun acc (_, d) -> [Push d; Get] @ acc @ [Swap; Append])
+          inner
+          free_vars
 
   | App (e1, e2) ->
       let c2 = generate_aux env e2 in
       let c1 = generate_aux (shift env) e1 in
-      c2 @ c1 @ [Exec; Swap; Pop]
-
+      c2 @ c1 @ [Exec]
 let generate expr = generate_aux [] expr

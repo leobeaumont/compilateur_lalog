@@ -1020,7 +1020,7 @@ La valeur de `x` aurait dû être **capturée et stockée** au moment de la cré
 
 ## Exercice 11
 
-### 11.1: What is the translation in the syntax of Expr already defined of a new let x = e1 in e2?
+### 11.1: What is the translation in the syntax of Expr already defined of a new `let x = e1 in e2`?
 
 
 Un *syntactic sugar* est une syntaxe plus agréable à écrire qui n'ajoute aucune nouvelle capacité au langage — elle abrège simplement quelque chose qui existe déjà.
@@ -1065,3 +1065,439 @@ Ajouter la règle de traduction dans `expr` :
 La règle `App(Fun(id, e2), e1)` traduit directement `let x = e1 in e2` en
 $(\lambda x . e_2) \ e_1$ sans aucune modification de l'AST, de l'évaluateur
 ou du compilateur vers Pfx.
+
+
+# Closure
+
+## Exercice 12 
+
+### Give the proof derivation computing the value of the term of question 10.4 $(((λx.λy.(x−y)) 12) 8)$.
+
+Nous calculons la valeur de l’expression
+
+$$
+((\lambda x.\lambda y.(x-y))\ 12)\ 8
+$$
+
+en utilisant la sémantique opérationnelle **big-step** du langage **Expr**.
+
+---
+
+### Étape 1 — Évaluation de la fonction externe
+
+En utilisant la règle **Fun**, l’expression
+
+$$
+\lambda x.\lambda y.(x-y)
+$$
+
+s’évalue en une **closure** qui capture son environnement :
+
+$$
+E \vdash \lambda x.\lambda y.(x-y) \Rightarrow \{E', x, \lambda y.(x-y)\}
+$$
+
+où \(E'\) contient les variables libres de la fonction (il n’y en a pas ici).
+
+---
+
+### Étape 2 — Première application
+
+On évalue :
+
+$$
+(\lambda x.\lambda y.(x-y))\ 12
+$$
+
+En utilisant la règle **App** :
+
+1. on évalue la fonction :
+
+$$
+E \vdash \lambda x.\lambda y.(x-y) \Rightarrow \{E',x,\lambda y.(x-y)\}
+$$
+
+2. on évalue l’argument :
+
+$$
+E \vdash 12 \Rightarrow 12
+$$
+
+3. on évalue le corps avec l’environnement mis à jour :
+
+$$
+E', x \mapsto 12 \vdash \lambda y.(x-y)
+$$
+
+En utilisant à nouveau la règle **Fun** :
+
+$$
+E', x \mapsto 12 \vdash \lambda y.(x-y)
+\Rightarrow \{E'', y, (x-y)\}
+$$
+
+où E'' = $\{x \mapsto 12\}$.
+
+Ainsi :
+
+$$
+E \vdash (\lambda x.\lambda y.(x-y))\ 12
+\Rightarrow \{E'',y,(x-y)\}
+$$
+
+---
+
+### Étape 3 — Deuxième application
+
+On évalue maintenant :
+
+$$
+(\lambda y.(x-y))\ 8
+$$
+
+En utilisant à nouveau la règle **App**.
+
+On évalue d’abord l’argument :
+
+$$
+E \vdash 8 \Rightarrow 8
+$$
+
+Puis on évalue le corps dans l’environnement :
+
+$$
+E'', y \mapsto 8
+$$
+
+On doit donc calculer :
+
+$$
+x - y
+$$
+
+---
+
+### Étape 4 — Évaluation de l’expression arithmétique
+
+En utilisant la règle **Var** :
+
+$$
+E'', y \mapsto 8 \vdash x \Rightarrow 12
+$$
+
+$$
+E'', y \mapsto 8 \vdash y \Rightarrow 8
+$$
+
+Puis en utilisant la règle **Binop** :
+
+$$
+12 - 8 = 4
+$$
+
+Donc :
+
+$$
+E'', y \mapsto 8 \vdash (x-y) \Rightarrow 4
+$$
+
+---
+
+### Résultat final
+
+En combinant les étapes précédentes :
+
+$$
+((\lambda x.\lambda y.(x-y))\ 12)\ 8 \Rightarrow 4
+$$
+
+---
+
+
+
+### Interprétation
+
+L’évaluation réussit car la fonction interne capture la valeur de `x` dans son environnement (closure).  
+Lorsque la fonction est appliquée à `8`, l’environnement contient toujours `x = 12`, ce qui permet de calculer :
+
+$$
+12 - 8 = 4
+$$
+
+## Exercice 13
+
+### 13.1 Is it possible to translate Expr to Pfx? If yes, can you give the idea of the translation. If no, what would be necessary to add to Pfx?
+
+Oui, il est possible de traduire le langage **Expr** vers **Pfx**, mais la traduction précédente est insuffisante pour gérer correctement les **fonctions retournant d'autres fonctions**.
+
+En effet, dans l’implémentation précédente, une fonction était simplement traduite en une **séquence exécutable** `(Q)`.  
+Cette représentation ne permet pas de mémoriser les valeurs des **variables libres** utilisées dans la fonction.
+
+Comme on l’a vu dans la question 10.4, cela pose un problème lorsqu’une fonction interne utilise une variable définie dans une fonction externe. Une fois la première application terminée, cette variable disparaît de la pile et la fonction interne ne peut plus y accéder.
+
+Pour résoudre ce problème, il faut introduire le concept de **closure**.
+
+Une **closure** est une valeur composée de deux éléments :
+
+- une **séquence exécutable** correspondant au corps de la fonction,
+- un **environnement** contenant les valeurs des variables libres de la fonction.
+
+L’idée de la traduction est donc la suivante :
+
+- lorsqu’une fonction est créée, on construit une séquence exécutable qui commence par **empiler les valeurs des variables libres** de la fonction ;
+- ces valeurs sont ajoutées au moment de l’exécution, car ce sont les seuls moments où leurs valeurs sont connues.
+
+Pour permettre cette construction dynamique, on introduit une nouvelle instruction dans Pfx :  **`apend`**
+
+
+Cette instruction prend :
+
+- une **valeur** au sommet de la pile,
+- une **séquence exécutable** juste en dessous,
+
+et ajoute au début de cette séquence l’instruction qui empile cette valeur.  
+Elle ajoute également une instruction permettant de retirer cette valeur de la pile lorsque l’exécution de la fonction se termine.
+
+Grâce à ce mécanisme, une fonction peut capturer les valeurs de ses variables libres et les retrouver lors de son exécution, ce qui permet de simuler correctement les **closures** du langage Expr dans Pfx.
+
+
+### 13.2 — Give the formal semantics of `append`
+
+D'après le document, `append` attend :
+- une **valeur** `v` au sommet de la pile
+- une **séquence exécutable** `(Q)` juste en dessous
+
+Elle produit une nouvelle séquence où `v` est capturée au début, et où une
+instruction de nettoyage est ajoutée à la fin (quand la fonction se termine,
+la valeur capturée est retirée de la pile).
+
+### Règles formelles
+
+Si `v` est un **entier** :
+
+$$
+\texttt{append} \cdot P, \ v :: (Q) :: S \rightarrow P, \ (\texttt{push } v \cdot Q \cdot \texttt{pop}) :: S
+$$
+
+Si `v` est une **séquence exécutable** :
+
+$$
+\texttt{append} \cdot P, \ (Q_1) :: (Q_2) :: S \rightarrow P, \ (Q_1 \cdot Q_2 \cdot \texttt{pop}) :: S
+$$
+
+### Cas d'erreur
+
+$$
+\texttt{append} \cdot P, \ S \rightarrow \text{Err} \quad \text{si } \#S < 2 \text{ ou si le deuxième élément n'est pas une séquence}
+$$
+### 13.3 If needed, extend the lexer and parser of Pfx to include these changes.
+
+Pour supporter l’instruction `append`, il est nécessaire d’étendre le langage **Pfx** afin d’ajouter cette nouvelle commande.
+
+Les modifications à effectuer concernent principalement :
+
+- l’AST du langage Pfx,
+- le lexer,
+- le parser.
+
+---
+
+### Modification de l’AST
+
+On ajoute un nouveau constructeur `Append` dans le type `command`.
+
+```ocaml
+type command =
+  | Push of int
+  | Pop
+  | Swap
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | Rem
+  | Exec
+  | Get
+  | Append
+  | Seq of command list
+```
+
+On met également à jour la fonction string_of_command :
+```ocaml
+| Append -> "append"
+```
+
+On l'ajoute également dans `ast.mli`
+
+### Modification du lexer
+
+Dans le fichier `pfx/basic/lexer.mll`, on ajoute la reconnaissance du mot-clé `append` :
+
+```ocaml
+| "append" { APPEND }
+```
+
+### Modification du parser
+
+Dans le fichier `pfx/basic/parser.mly` on ajoute le nouveau token:
+```ocaml
+%token APPEND
+```
+Puis on ajoute la règle correspondante dans la grammaire des commandes :
+
+```ocaml
+| APPEND { Append }
+```
+
+### Modification de eval
+
+  Il est nécessaire d'étendre l'interpréteur Pfx en ajoutant un nouveau cas dans la fonction `step` du fichier `pfx/basic/eval.ml`.
+
+```ocaml
+| Append :: q, v :: VSeq body :: stack ->
+    let new_seq =
+      match v with
+      | VInt n -> Push n :: body @ [Pop]
+      | VSeq seq -> Seq seq :: body @ [Pop]
+    in
+    Ok (q, VSeq new_seq :: stack)
+```
+
+### 13.4 — Give the formal rules of translation from Expr to Pfx to support closure.
+
+### Règles déjà définies (inchangées)
+
+$$M, R \vdash n \rightsquigarrow \texttt{push } n$$
+
+$$M, R \vdash x \rightsquigarrow \texttt{push } d \texttt{ get} \quad \text{où } d = P(x)$$
+
+$$\frac{M, P \vdash e_1 \rightsquigarrow Q_1 \quad M, \text{shift}(P) \vdash e_2 \rightsquigarrow Q_2}{M, P \vdash e_1 \oplus e_2 \rightsquigarrow Q_1 \cdot Q_2 \cdot \oplus}$$
+
+### Nouvelle règle pour $\lambda x.e$
+
+Soient $y_1, ..., y_k$ les variables libres de $e$ (différentes de $x$), aux profondeurs $d_1, ..., d_k$ dans $P$.
+
+On construit l'environnement du corps :
+
+$$P' = \{y_1 \to 0, ..., y_k \to k-1, x \to k\}$$
+
+$$\frac{P' \vdash e \rightsquigarrow Q}{P \vdash \lambda x.e \rightsquigarrow \texttt{push } d_1 \texttt{ get } (Q) \texttt{ swap append} \cdots \texttt{push } d_k \texttt{ get } \texttt{ swap append}}$$
+
+### Nouvelle règle pour l'application $e_1\ e_2$
+
+$$\frac{P \vdash e_2 \rightsquigarrow Q_2 \quad \text{shift}(P) \vdash e_1 \rightsquigarrow Q_1}{P \vdash e_1\ e_2 \rightsquigarrow Q_2 \cdot Q_1 \cdot \texttt{exec}}$$
+
+### Interprétation
+
+Cette traduction construit progressivement une **closure**.
+
+Chaque instruction `append` modifie la séquence exécutable afin d'y insérer une instruction `push` correspondant à la valeur capturée.
+
+Ainsi, lorsque la fonction sera exécutée, les valeurs des variables libres seront automatiquement disponibles dans la pile.
+
+Ce mécanisme permet de reproduire le comportement des **closures** du langage Expr dans le langage Pfx.
+
+### 13.5 Modify the function `generate` accordingly
+
+Pour implémenter les closures dans la traduction de Expr vers Pfx, il est nécessaire de capturer les valeurs des **variables libres** d'une fonction au moment de sa création.
+
+Pour cela, nous utilisons l'instruction `append`.
+
+Lors de la traduction d'une abstraction `λx.e`, nous procédons ainsi :
+
+1. On identifie les **variables libres** de `e` — c'est-à-dire les variables de l'environnement courant différentes de `x`
+2. On construit un nouvel environnement `full_env` pour compiler le corps :
+   - les variables libres $y_1, ..., y_k$ sont aux profondeurs $0, 1, ..., k-1$
+   - le paramètre `x` est à la profondeur $k$
+3. On compile le corps `e` avec `full_env`
+4. Pour chaque variable libre, on récupère sa valeur dans la pile et on l'insère dans la séquence exécutable grâce à `append`
+
+Si la fonction n'a pas de variables libres, on génère simplement `(body swap pop)`.
+
+Le code OCaml dans `expr/fun/toPfx.ml` est :
+```ocaml
+| Fun (x, e) ->
+    let free_vars = List.filter (fun (v, _) -> v <> x) env in
+    let free_env = List.mapi (fun i (v, _) -> (v, i)) free_vars in
+    let x_depth = List.length free_vars in
+    let full_env = (x, x_depth) :: free_env in
+    let body = generate_aux full_env e in
+    if free_vars = [] then
+      [Seq (body @ [Swap; Pop])]
+    else
+      let inner = [Seq (body @ [Swap; Pop])] in
+      List.fold_left
+        (fun acc (_, d) -> [Push d; Get] @ acc @ [Swap; Append])
+        inner
+        free_vars
+
+| App (e1, e2) ->
+    let c2 = generate_aux env e2 in
+    let c1 = generate_aux (shift env) e1 in
+    c2 @ c1 @ [Exec]
+```
+
+## 13.6 — Compiled version of `((λx.λy.(x − y)) 12) 8`
+
+### Programme Pfx généré
+```
+0 push 8 push 12 (push 0 get (push 0 get push 2 get swap sub swap pop) swap append swap pop) exec exec
+```
+
+### Évaluation pas à pas
+
+**État 0 — initial**
+```
+∅  |  push 8 · push 12 · S_ext · exec · exec
+```
+
+**État 1 — après `push 8`**
+```
+8  |  push 12 · S_ext · exec · exec
+```
+
+**État 2 — après `push 12`**
+```
+12 · 8  |  S_ext · exec · exec
+```
+
+**État 3 — après push de S_ext**
+
+`S_ext = ( push 0 get (push 0 get push 2 get swap sub swap pop) swap append swap pop )`
+```
+S_ext · 12 · 8  |  exec · exec
+```
+
+**État 4 — après `exec`** — S_ext s'exécute avec pile `12 · 8` :
+
+- `push 0 get` → profondeur 0 = `12` → `12 · 12 · 8`
+- push S_int → `S_int · 12 · 12 · 8`
+- `swap` → `12 · S_int · 12 · 8`
+- `append` → capture `x=12` dans S_int → `(push 12 push 0 get push 2 get swap sub swap pop) · 12 · 8`
+- `swap pop` → nettoie `12` → `(push 12 push 0 get push 2 get swap sub swap pop) · 8`
+```
+closure · 8  |  exec
+```
+
+**État 5 — après `exec`** — closure s'exécute avec pile `8` :
+
+- `push 12` → `12 · 8`
+- `push 0 get` → profondeur 0 = `12` → `12 · 12 · 8`
+- `push 2 get` → profondeur 2 = `8` → `8 · 12 · 12 · 8`
+- `swap` → `12 · 8 · 12 · 8`
+- `sub` → `12 - 8 = 4` → `4 · 12 · 8`
+- `swap` → `12 · 4 · 8`
+- `pop` → `4 · 8`
+```
+4 · 8  |  ∅
+```
+
+### Résultat : **4** ✓ (12 - 8 = 4)
+
+---
+
+### Est-ce mieux ?
+
+Oui, c'est bien mieux ! Contrairement à la question 10.4 où `x=12` était perdu après le premier `exec`, ici la closure capture correctement la valeur de `x=12` grâce à `append` au moment de la création de la fonction interne.
+
+La valeur de `x=12` est **embarquée directement** dans la séquence exécutable via `push 12`, indépendamment de l'état de la pile au moment de l'appel. C'est exactement le comportement attendu des **closures** défini dans la sémantique formelle de Expr.

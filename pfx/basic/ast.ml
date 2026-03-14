@@ -9,23 +9,23 @@ type command =
   | Rem
   | Exec
   | Get
+  | Append
   | Seq of command list
 
 type program = int * command list
 
-(* add here all useful functions and types related to the AST: for instance string_of_ functions *)
-
 let rec string_of_command = function
-  | Push n -> "push " ^ string_of_int n
-  | Pop    -> "pop"
-  | Swap   -> "swap"
-  | Add    -> "add"
-  | Sub    -> "sub"
-  | Mul    -> "mul"
-  | Div    -> "div"
-  | Rem    -> "rem"
-  | Exec   -> "exec"
-  | Get    -> "get"
+  | Push n   -> "push " ^ string_of_int n
+  | Pop      -> "pop"
+  | Swap     -> "swap"
+  | Add      -> "add"
+  | Sub      -> "sub"
+  | Mul      -> "mul"
+  | Div      -> "div"
+  | Rem      -> "rem"
+  | Exec     -> "exec"
+  | Get      -> "get"
+  | Append   -> "append"
   | Seq cmds -> "(" ^ string_of_commands cmds ^ ")"
 
 and string_of_commands cmds =

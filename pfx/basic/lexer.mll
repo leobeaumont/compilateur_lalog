@@ -17,23 +17,20 @@ rule token = parse
   | newline+ { Location.incr_line lexbuf; token lexbuf }
   | blank+   { token lexbuf }
   | eof      { EOF }
-
   | number as nb { mk_int nb }
-
-  | "add"  { ADD }
-  | "sub"  { SUB }
-  | "mul"  { MUL }
-  | "div"  { DIV }
-  | "rem"  { REM }
-  | "pop"  { POP }
-  | "swap" { SWAP }
-
-  | "exec" { EXEC }
-  | "get"  { GET }
-
+  | "add"    { ADD }
+  | "sub"    { SUB }
+  | "mul"    { MUL }
+  | "div"    { DIV }
+  | "rem"    { REM }
+  | "pop"    { POP }
+  | "swap"   { SWAP }
+  | "push"   { PUSH }
+  | "exec"   { EXEC }
+  | "get"    { GET }
+  | "append" { APPEND }
   | "(" { LPAR }
   | ")" { RPAR }
-
   | _ as c {
       let loc = Location.curr lexbuf in
       raise (Location.Error (Printf.sprintf "Illegal character '%c'" c, loc))

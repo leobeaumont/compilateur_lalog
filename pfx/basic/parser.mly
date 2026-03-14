@@ -7,7 +7,7 @@
  **************)
 
 %token ADD SUB MUL DIV REM POP SWAP
-%token EXEC GET
+%token EXEC GET APPEND PUSH
 %token LPAR RPAR
 %token <int> INT
 %token EOF
@@ -35,16 +35,17 @@ commands:
       { [] }
 
 command:
-  | n=INT  { Push n }
-  | ADD    { Add }
-  | SUB    { Sub }
-  | MUL    { Mul }
-  | DIV    { Div }
-  | REM    { Rem }
-  | POP    { Pop }
-  | SWAP   { Swap }
-  | EXEC   { Exec }
-  | GET    { Get }
+  | PUSH n=INT { Push n }
+  | ADD        { Add }
+  | SUB        { Sub }
+  | MUL        { Mul }
+  | DIV        { Div }
+  | REM        { Rem }
+  | POP        { Pop }
+  | SWAP       { Swap }
+  | EXEC       { Exec }
+  | GET        { Get }
+  | APPEND     { Append }
   | LPAR cmds=commands RPAR { Seq cmds }
-
+  
 %%
