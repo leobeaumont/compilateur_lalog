@@ -718,9 +718,11 @@ Ajout de nouveaux cas dans la fonction `step`:
 | Exec :: q, VSeq cmds :: stack ->
     Ok (cmds @ q, stack)
 
-| Get :: q, i :: stack ->
-    let v = List.nth stack i in
-    Ok (q, v :: stack)
+| Get :: q, VInt i :: stack ->
+      if i < List.length stack then
+        Ok (q, List.nth stack i :: stack)
+      else
+        Error("Index out of bounds", state)
 ```
 Ces règles définissent la sémantique opérationnelle des nouvelles instructions :
 
