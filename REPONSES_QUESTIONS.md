@@ -1365,13 +1365,17 @@ Puis on ajoute la règle correspondante dans la grammaire des commandes :
   Il est nécessaire d'étendre l'interpréteur Pfx en ajoutant un nouveau cas dans la fonction `step` du fichier `pfx/basic/eval.ml`.
 
 ```ocaml
-| Append :: q, v :: VSeq body :: stack ->
-    let new_seq =
-      match v with
-      | VInt n -> Push n :: body @ [Pop]
-      | VSeq seq -> Seq seq :: body @ [Pop]
-    in
-    Ok (q, VSeq new_seq :: stack)
+(* Append - value is integer *)
+| Append :: q, VInt v :: VSeq body :: stack ->
+    Ok (q, VSeq (Push v :: body) :: stack)
+
+(* Append - value is a sequence *)
+| Append :: q, VSeq q1 :: VSeq q2 :: stack ->
+    Ok (q, VSeq (q1 @ q2) :: stack)
+
+| Append :: q, _ ->
+    Error("Append expects a value then a sequence", state)
+
 ```
 
 ### 13.4 — Give the formal rules of translation from Expr to Pfx to support closure.
@@ -1425,7 +1429,7 @@ Lors de la traduction d'une abstraction `λx.e`, nous procédons ainsi :
 
 Si la fonction n'a pas de variables libres, on génère simplement `(body swap pop)`.
 
-Le code OCaml dans `expr/fun/toPfx.ml` est :
+Le code OCaml dans `expr/fun/toPfx.ml`:
 ```ocaml
 | Fun (x, e) ->
     let free_vars = List.filter (fun (v, _) -> v <> x) env in
