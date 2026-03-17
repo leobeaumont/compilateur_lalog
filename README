@@ -1,9 +1,8 @@
 AUTHORS
 -------
 
-- NAME1
-- NAME2
-…
+- Beaumont Léo
+- Chouki Mouad
 
 ===============
 
@@ -17,12 +16,8 @@ This μ-project is a very simple compiler…
 Sources
 -------
 
-Git repository: https://gitlab-df.imt-atlantique.fr/...
+Git repository: https://github.com/leobeaumont/compilateur_lalog
 
-(obviously, you _will_ use a version control system such as Git, IMT
-Atlantique provides a project management platform: use it!)
-
-Release : tag 1.0 or commit acdeacdacdacdacd
 
 ===============
 
@@ -31,15 +26,20 @@ How to…
 
 …retrieve the sources?
 
-  git clone https://gitlab-df.imt-atlantique.fr/...
+  git clone https://github.com/leobeaumont/compilateur_lalog
+
+…see our answers?
+
+  Toute les réponses aux questions se trouvent dans le fichier `REPONSES_QUESTIONS.md`.
+  Nous avons fait des branches pour chaque version du code, dans les réponses aux questions nous donnons le lien vers la branche concernée.
 
 …compile?
 
-  dune …
+  dune build
 
 …execute and test?
 
-  dune exec ./pfx/pfxVM.exe -- -a 12 -a 52 TESTFILE.pfx
+  dune exec ./compiler.exe -- [chemin vers le fichier]
 
 
 ===============
@@ -104,39 +104,25 @@ project
 Progress
 --------
 
-- We stopped at question 10.1 (proof of derivation)
-- There is still a bug in question 8.3 (new version of generate function)
-- …
+- We stopped at question 13.6 (Compiled version of `((λx.λy.(x − y)) 12) 8`)
 
 ===============
 
 Know bugs and issues
 --------------------
 
-- We were not able to manage xxx…
-- Compiler fails when xxx…
-- …
+
 
 ===============
 
 Helpful resources
 -----------------
 
-- we used Stack Overflow to solve the problem of xxx :
-  https://stackoverflow/xxxxxxi
-  https://stackoverflow/yyyyyy
-- someone on GitHub provided an interesting example very similar to the answer of the question x.y : https://github.com/xxxx
-- …
+
 
 ===============
 
 Difficulties
 ------------
 
-- team programming: having to use a VCS such as git and avoiding conflicts
-- thinking functional
-- changing habits by using an unknown language
-- Not a single difficulty: the project was so easy that my 8-old brother did it
-  completely; the Ocaml language is so nice I enjoyed the project, …
-- …
-
+Le débuggage de la question 13.5 a été laborieuse. La compréhension du mode de compilation et la manipulation de dune nous a pris beaucoups de temps.
