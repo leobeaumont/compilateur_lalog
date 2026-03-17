@@ -447,8 +447,8 @@ La règle principale du parser est la suivante :
 
 ```ocaml
 program:
-  INT commands EOF
-    { ($1, $2) }
+  i=INT cmds=commands EOF
+    { (i, cmds) }
 ```
 
 Cette règle indique qu’un programme commence par un entier indiquant le nombre d’arguments, suivi d’une suite de commandes, puis de la fin du fichier.
@@ -457,8 +457,10 @@ La liste des commandes est définie récursivement :
 
 ```ocaml
 commands:
-  | command commands { $1 :: $2 }
-  | { [] }
+  | c=command cs=commands
+      { c :: cs }
+  |
+      { [] }
 ```
 
 Cette définition permet de construire progressivement la liste des instructions du programme.
@@ -467,14 +469,14 @@ Chaque instruction du langage est ensuite transformée en une commande de l’AS
 
 ```ocaml
 command:
-  | INT   { Push $1 }
-  | ADD   { Add }
-  | SUB   { Sub }
-  | MUL   { Mul }
-  | DIV   { Div }
-  | REM   { Rem }
-  | POP   { Pop }
-  | SWAP  { Swap }
+  | n=INT  { Push n }
+  | ADD    { Add }
+  | SUB    { Sub }
+  | MUL    { Mul }
+  | DIV    { Div }
+  | REM    { Rem }
+  | POP    { Pop }
+  | SWAP   { Swap }
 ```
 
 Chaque token reconnu par le lexer correspond ainsi à une instruction de la machine Pfx.
