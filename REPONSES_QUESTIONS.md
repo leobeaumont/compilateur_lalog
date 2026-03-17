@@ -882,6 +882,28 @@ Cet environnement est représenté par une liste : `(string*int) list`
 qui associe une variable à sa position dans la pile.
 
 ---
+### Pourquoi introduire `generate_aux` ?
+
+La fonction `generate` originale ne prenait pas d'environnement en paramètre, car les expressions ne contenaient pas de variables liées. Avec l'introduction des constructions `Var`, `Fun` et `App`, il devient nécessaire de **propager un environnement** à travers la compilation.
+
+On introduit donc une fonction auxiliaire récursive `generate_aux` qui prend **deux paramètres** :
+
+- `env : (string * int) list` — l'environnement courant, associant chaque variable à sa profondeur dans la pile au moment de sa compilation,
+- `e : expr` — l'expression à compiler.
+```ocaml
+let rec generate_aux env = function
+  | Const n ->
+      [Push n]
+```
+
+La fonction `generate` publique reste inchangée dans son interface : elle appelle simplement `generate_aux` avec un environnement vide :
+```ocaml
+let generate e = generate_aux [] e
+```
+
+Cette séparation permet de **garder une interface simple** pour les appelants, tout en **encapsulant la gestion de l'environnement** dans la fonction auxiliaire.
+
+---
 
 ### Gestion des variables
 
@@ -917,9 +939,9 @@ Le paramètre $x$ est ajouté à l’environnement avec une profondeur $0$, puis
 ```ocaml
 | Fun (x, e) ->
     let body =
-      generate ((x, 0) :: shift env) e
+      generate_aux ((x, 0) :: shift env) e
     in
-    [ExecSeq body]
+    [Seq body]
 ```
 
 ### Compilation des applications
@@ -929,13 +951,13 @@ Une application `e1 e2` est compilée de la manière suivante :
 1.  on compile d’abord l’argument,
 2. puis la fonction,
 3. on exécute la fonction avec `exec`,
-4. et on retire l’argument de la pile avec `pop`.
+4. et on retire l’argument de la pile avec un ` swap pop`.
 
 ```ocaml
 | App (e1, e2) ->
-    let c2 = generate env e2 in
-    let c1 = generate (shift env) e1 in
-    c2 @ c1 @ [Exec; Pop]
+    let c2 = generate_aux env e2 in
+    let c1 = generate_aux (shift env) e1 in
+    c2 @ c1 @ [Exec; Swap; Pop]
 ```
 
 
